@@ -10,6 +10,10 @@ const (
 	XMLSpaceEncoding = "http://schemas.xmlsoap.org/soap/encoding/"
 )
 
+type Header interface {
+	MustUnderstand() bool
+}
+
 type Envelope struct {
 	Header interface{}
 	Body   interface{}

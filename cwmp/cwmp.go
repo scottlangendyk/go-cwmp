@@ -33,10 +33,34 @@ var (
 )
 
 type ID string
+
+func (_ ID) MustUnderstand() bool {
+	return true
+}
+
 type HoldRequests bool
+
+func (_ HoldRequests) MustUnderstand() bool {
+	return true
+}
+
 type SessionTimeout uint
+
+func (_ SessionTimeout) MustUnderstand() bool {
+	return false
+}
+
 type SupportedCWMPVersions []string
+
+func (_ SupportedCWMPVersions) MustUnderstand() bool {
+	return false
+}
+
 type UseCWMPVersion string
+
+func (_ UseCWMPVersion) MustUnderstand() bool {
+	return true
+}
 
 type Header []interface{}
 
