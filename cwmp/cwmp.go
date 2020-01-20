@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+const XMLSpace = "urn:dslforum-org:cwmp-1-0"
+
 var (
 	ACSMethodNotSupported = 8000
 	ACSRequestDenied      = 8001
@@ -30,11 +32,47 @@ var (
 	CPEInvalidUUID                 = 9022
 )
 
+type ID string
+type HoldRequests bool
+
+type Header []interface{}
+
+func (h *Header) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	switch start.Name.Local {
+	case "ID":
+		var id ID
+
+		err := d.DecodeElement(&id, &start)
+		if err != nil {
+			return err
+		}
+
+		*h = append(*h, id)
+
+		return nil
+	case "HoldRequests":
+		var hold HoldRequests
+
+		err := d.DecodeElement(&hold, &start)
+		if err != nil {
+			return err
+		}
+
+		*h = append(*h, hold)
+
+		return nil
+	default:
+		return d.Skip()
+	}
+}
+
 func Decode(d *xml.Decoder) (*soap.Envelope, error) {
 	b := &body{}
+	h := &Header{}
 
 	e := &soap.Envelope{
-		Body: b,
+		Header: h,
+		Body:   b,
 	}
 
 	err := d.Decode(e)
@@ -105,12 +143,17 @@ func (b *body) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 }
 
 type Reboot struct {
-	CommandKey string `xml:"CommandKey"`
+	XMLName    xml.Name `xml:"urn:dslforum-org:cwmp-1-0 Reboot"`
+	CommandKey string   `xml:"CommandKey"`
 }
 
-type RebootResponse struct{}
+type RebootResponse struct {
+	XMLName xml.Name `xml:"urn:dslforum-org:cwmp-1-0 RebootResponse"`
+}
 
-type GetRPCMethods struct{}
+type GetRPCMethods struct {
+	XMLName xml.Name `xml:"urn:dslforum-org:cwmp-1-0 GetRPCMethods"`
+}
 
 type GetRPCMethodsResponse struct {
 	MethodList []string
@@ -148,20 +191,25 @@ func (msg *GetRPCMethodsResponse) UnmarshalXML(d *xml.Decoder, start xml.StartEl
 }
 
 type Fault struct {
-	Code   uint   `xml:"FaultCode"`
-	String string `xml:"FaultString"`
+	XMLName xml.Name `xml:"urn:dslforum-org:cwmp-1-0 Fault"`
+	Code    uint     `xml:"FaultCode"`
+	String  string   `xml:"FaultString"`
 }
 
 type TransferComplete struct {
+	XMLName      xml.Name  `xml:"urn:dslforum-org:cwmp-1-0 TransferComplete"`
 	CommandKey   string    `xml:"CommandKey"`
 	Fault        Fault     `xml:"FaultStruct"`
 	StartTime    time.Time `xml"StartTime"`
 	CompleteTime time.Time `xml:"CompleteTime"`
 }
 
-type TransferCompleteResponse struct{}
+type TransferCompleteResponse struct {
+	XMLName xml.Name `xml:"urn:dslforum-org:cwmp-1-0 TransferCompleteResponse"`
+}
 
 type AutonomousTransferComplete struct {
+	XMLName        xml.Name  `xml:"urn:dslforum-org:cwmp-1-0 AutonomousTransferComplete"`
 	AnnounceURL    string    `xml:"AnnounceURL"`
 	TransferURL    string    `xml:"TranserURL"`
 	IsDownload     bool      `xml:"IsDownload"`
@@ -173,9 +221,12 @@ type AutonomousTransferComplete struct {
 	CompleteTime   time.Time `xml:"CompleteTime"`
 }
 
-type AutonomousTransferCompleteResponse struct{}
+type AutonomousTransferCompleteResponse struct {
+	XMLName xml.Name `xml:"urn:dslforum-org:cwmp-1-0 AutonomousTransferCompleteResponse"`
+}
 
 type Download struct {
+	XMLName        xml.Name `xml:"urn:dslforum-org:cwmp-1-0 Download"`
 	CommandKey     string
 	FileType       string
 	URL            string
@@ -189,12 +240,14 @@ type Download struct {
 }
 
 type DownloadResponse struct {
+	XMLName      xml.Name `xml:"urn:dslforum-org:cwmp-1-0 DownloadResponse"`
 	Completed    bool
 	StartTime    time.Time
 	CompleteTime time.Time
 }
 
 type GetParameterNames struct {
+	XMLName       xml.Name `xml:"urn:dslforum-org:cwmp-1-0 GetParameterNames"`
 	ParameterPath string
 	NextLevel     bool
 }
@@ -205,14 +258,17 @@ type ParameterInfo struct {
 }
 
 type GetParameterNamesResponse struct {
+	XMLName       xml.Name `xml:"urn:dslforum-org:cwmp-1-0 GetParameterNamesResponse"`
 	ParameterList []ParameterInfo
 }
 
 type GetParameterValues struct {
+	XMLName        xml.Name `xml:"urn:dslforum-org:cwmp-1-0 GetParameterValues"`
 	ParameterNames string
 }
 
 type GetParameterValuesResponse struct {
+	XMLName       xml.Name `xml:"urn:dslforum-org:cwmp-1-0 GetParameterValuesResponse"`
 	ParameterList []ParameterValue
 }
 
@@ -222,10 +278,12 @@ type ParameterValue struct {
 }
 
 type SetParameterValues struct {
+	XMLName       xml.Name `xml:"urn:dslforum-org:cwmp-1-0 SetParameterValues"`
 	ParameterList []ParameterValue
 	ParameterKey  string
 }
 
 type SetParameterValuesResponse struct {
-	Status bool
+	XMLName xml.Name `xml:"urn:dslforum-org:cwmp-1-0 SetParameterValuesResponse"`
+	Status  bool
 }

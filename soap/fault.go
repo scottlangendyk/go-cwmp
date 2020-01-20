@@ -75,10 +75,11 @@ func (f *Fault) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	return nil
 }
 
-func (f *Fault) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+func (f Fault) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	t := xml.StartElement{
 		Name: xml.Name{
-			Local: "soapenv:Fault",
+			Space: XMLSpaceEnvelope,
+			Local: "Fault",
 		},
 	}
 

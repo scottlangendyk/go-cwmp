@@ -28,8 +28,9 @@ type InformResponse struct {
 	MaxEnvelopes uint `xml:"MaxEnvelopes"`
 }
 
-func (r *InformResponse) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	err := e.EncodeToken(start)
+func (r InformResponse) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	s := xml.StartElement{Name: xml.Name{Space: XMLSpace, Local: "InformResponse"}}
+	err := e.EncodeToken(s)
 	if err != nil {
 		return err
 	}
@@ -39,5 +40,5 @@ func (r *InformResponse) MarshalXML(e *xml.Encoder, start xml.StartElement) erro
 		return err
 	}
 
-	return e.EncodeToken(start.End())
+	return e.EncodeToken(s.End())
 }

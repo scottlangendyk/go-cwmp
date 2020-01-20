@@ -29,14 +29,21 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/xml")
 	w.Header().Set("SOAPAction", "")
 
-	e := xml.NewEncoder(w)
+	p := soap.NewPrefixer(w, map[string]string{soap.XMLSpaceEnvelope: "soapenv", cwmp.XMLSpace: "cwmp"})
+
+	e := xml.NewEncoder(p)
+
+	switch h := msg.Header.(type) {
+	case *cwmp.Header:
+		fmt.Println(h)
+	}
 
 	switch m := msg.Body.(type) {
 	case *cwmp.Inform:
 		fmt.Println(m)
 		http.SetCookie(w, &http.Cookie{Name: "test", Value: "test"})
 		e.Encode(&soap.Envelope{
-			Body: cwmp.InformResponse{},
+			Body: &cwmp.InformResponse{},
 		})
 	case *soap.Fault:
 		fmt.Println(m.Detail)

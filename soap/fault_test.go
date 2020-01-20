@@ -113,7 +113,7 @@ func TestEncodeFault(t *testing.T) {
 		t.Errorf("%s", err)
 	}
 
-	expected := `<soapenv:Fault><faultcode>faultcodehere</faultcode><faultstring>faultstringhere</faultstring><faultfactor>faultfactorhere</faultfactor><detail><string>detailhere</string></detail></soapenv:Fault>`
+	expected := `<Fault xmlns="http://schemas.xmlsoap.org/soap/envelope/"><faultcode>faultcodehere</faultcode><faultstring>faultstringhere</faultstring><faultfactor>faultfactorhere</faultfactor><detail><string>detailhere</string></detail></Fault>`
 
 	if b.String() != expected {
 		t.Errorf("Got (%s) Expected (%s)", b.String(), expected)
