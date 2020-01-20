@@ -119,10 +119,6 @@ type header struct {
 }
 
 func (h *header) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	if start.Name.Local != "Header" {
-		return fmt.Errorf("soap: Expected (Header) got (%s)", start.Name.Local)
-	}
-
 	if h.Contents == nil {
 		return d.Skip()
 	}
