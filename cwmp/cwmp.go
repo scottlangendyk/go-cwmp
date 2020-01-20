@@ -34,36 +34,38 @@ var (
 
 type ID string
 type HoldRequests bool
+type SessionTimeout uint
+type SupportedCWMPVersions []string
+type UseCWMPVersion string
 
 type Header []interface{}
 
 func (h *Header) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	var hdr interface{}
+
 	switch start.Name.Local {
 	case "ID":
-		var id ID
-
-		err := d.DecodeElement(&id, &start)
-		if err != nil {
-			return err
-		}
-
-		*h = append(*h, id)
-
-		return nil
+		hdr = new(ID)
 	case "HoldRequests":
-		var hold HoldRequests
-
-		err := d.DecodeElement(&hold, &start)
-		if err != nil {
-			return err
-		}
-
-		*h = append(*h, hold)
-
-		return nil
+		hdr = new(HoldRequests)
+	case "SessionTimeout":
+		hdr = new(SessionTimeout)
+	case "SupportedCWMPVersions":
+		hdr = new(SupportedCWMPVersions)
+	case "UseCWMPVersion":
+		hdr = new(UseCWMPVersion)
 	default:
 		return d.Skip()
 	}
+
+	err := d.DecodeElement(hdr, &start)
+	if err != nil {
+		return err
+	}
+
+	*h = append(*h, hdr)
+
+	return nil
 }
 
 func Decode(d *xml.Decoder) (*soap.Envelope, error) {

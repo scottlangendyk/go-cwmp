@@ -8,7 +8,7 @@ import (
 )
 
 func TestDecode(t *testing.T) {
-	input := `<soapenv:Envelope><soapenv:Header><cwmp:ID>MyID123Here</cwmp:ID><cwmp:SessionTimeout>Two</cwmp:SessionTimeout></soapenv:Header><soapenv:Body></soapenv:Body></soapenv:Envelope>`
+	input := `<soapenv:Envelope><soapenv:Header><cwmp:ID>MyID123Here</cwmp:ID><cwmp:SessionTimeout>2</cwmp:SessionTimeout></soapenv:Header><soapenv:Body></soapenv:Body></soapenv:Envelope>`
 
 	d := xml.NewDecoder(strings.NewReader(input))
 
@@ -28,8 +28,8 @@ func TestDecode(t *testing.T) {
 
 	for _, hdr := range *h {
 		switch el := hdr.(type) {
-		case ID:
-			if el != "MyID123Here" {
+		case *ID:
+			if *el != "MyID123Here" {
 				t.Errorf("Wrong ID")
 			}
 
