@@ -12,6 +12,7 @@ const (
 
 type Header interface {
 	MustUnderstand() bool
+	Name() xml.Name
 }
 
 type Envelope struct {
@@ -59,6 +60,10 @@ func (e *Envelope) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	if el.Name.Local != "Body" {
+		return fmt.Errorf("soap: Expected (Body) got (%s)", el.Name.Local)
 	}
 
 	b := &body{
@@ -178,10 +183,6 @@ type body struct {
 }
 
 func (b *body) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	if start.Name.Local != "Body" {
-		return fmt.Errorf("soap: Expected (Body) got (%s)", start.Name.Local)
-	}
-
 	if b.Contents == nil {
 		return d.Skip()
 	}
