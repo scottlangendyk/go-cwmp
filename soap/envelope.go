@@ -10,17 +10,7 @@ const (
 	XMLSpaceEncoding = "http://schemas.xmlsoap.org/soap/encoding/"
 )
 
-type Header interface {
-	MustUnderstand() bool
-	Name() xml.Name
-}
-
-type Envelope struct {
-	Header interface{}
-	Body   interface{}
-}
-
-func (e *Envelope) startElement(d *xml.Decoder) (*xml.StartElement, error) {
+func startElement(d *xml.Decoder) (*xml.StartElement, error) {
 	for {
 		t, err := d.Token()
 		if err != nil {
@@ -36,12 +26,22 @@ func (e *Envelope) startElement(d *xml.Decoder) (*xml.StartElement, error) {
 	}
 }
 
-func (e *Envelope) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+type Header interface {
+	MustUnderstand() bool
+	Name() xml.Name
+}
+
+type Envelope struct {
+	Header interface{}
+	Body   interface{}
+}
+
+func (env *Envelope) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	if start.Name.Local != "Envelope" {
 		return fmt.Errorf("soap: Expected (Envelope) got (%s)", start.Name.Local)
 	}
 
-	el, err := e.startElement(d)
+	el, err := startElement(d)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func (e *Envelope) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	if el.Name.Local == "Header" {
 		h := &element{
 			Name: "Header",
-			Contents: e.Header,
+			Contents: env.Header,
 		}
 
 		err = d.DecodeElement(h, el)
@@ -57,7 +57,7 @@ func (e *Envelope) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 			return err
 		}
 
-		el, err = e.startElement(d)
+		el, err = startElement(d)
 		if err != nil {
 			return err
 		}
@@ -69,7 +69,7 @@ func (e *Envelope) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 
 	b := &element{
 		Name: "Body",
-		Contents: &e.Body,
+		Contents: &env.Body,
 	}
 
 	err = d.DecodeElement(b, el)
@@ -128,8 +128,8 @@ type element struct {
 	Contents interface{}
 }
 
-func (e *element) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	if e.Contents == nil {
+func (el *element) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	if el.Contents == nil {
 		return d.Skip()
 	}
 
@@ -139,15 +139,15 @@ func (e *element) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 			return err
 		}
 
-		switch el := t.(type) {
+		switch e := t.(type) {
 		case xml.EndElement:
-			if el.Name.Local == e.Name {
-				return nil
+			if e.Name.Local != el.Name {
+				return fmt.Errorf("soap: Unexpected EndElement")
 			}
 
-			return fmt.Errorf("soap: Unexpected EndElement")
+			return nil
 		case xml.StartElement:
-			err = d.DecodeElement(e.Contents, &el)
+			err = d.DecodeElement(el.Contents, &e)
 			if err != nil {
 				return err
 			}

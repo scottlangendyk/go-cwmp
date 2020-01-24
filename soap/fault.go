@@ -44,11 +44,13 @@ func (f *Fault) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 
 		switch el := t.(type) {
 		case xml.EndElement:
-			if el.Name.Local == "Fault" {
-				return nil
+			if el.Name.Local != "Fault" {
+				return fmt.Errorf("Unexpected EndElement")
 			}
 
-			return fmt.Errorf("Unexpected EndElement")
+			f.Detail = detail.Contents
+
+			return nil
 		case xml.StartElement:
 			var v interface{}
 
@@ -69,10 +71,6 @@ func (f *Fault) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 			}
 		}
 	}
-
-	f.Detail = detail.Contents
-
-	return nil
 }
 
 func (f Fault) MarshalXML(e *xml.Encoder, start xml.StartElement) error {

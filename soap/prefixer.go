@@ -102,6 +102,4 @@ func (p *prefixer) Write(w []byte) (int, error) {
 			return n, err
 		}
 	}
-
-	return n, err
 }
