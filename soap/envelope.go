@@ -47,7 +47,8 @@ func (e *Envelope) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	}
 
 	if el.Name.Local == "Header" {
-		h := &header{
+		h := &element{
+			Name: "Header",
 			Contents: e.Header,
 		}
 
@@ -66,7 +67,8 @@ func (e *Envelope) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 		return fmt.Errorf("soap: Expected (Body) got (%s)", el.Name.Local)
 	}
 
-	b := &body{
+	b := &element{
+		Name: "Body",
 		Contents: &e.Body,
 	}
 
@@ -92,8 +94,9 @@ func (env Envelope) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	}
 
 	if env.Header != nil {
-		h := &header{
+		h := &element{
 			Contents: env.Header,
+			Name: "Header",
 		}
 
 		err = e.Encode(h)
@@ -102,7 +105,8 @@ func (env Envelope) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 		}
 	}
 
-	b := &body{
+	b := &element{
+		Name: "Body",
 		Contents: &env.Body,
 	}
 
@@ -119,12 +123,13 @@ func (env Envelope) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.Flush()
 }
 
-type header struct {
+type element struct {
+	Name string
 	Contents interface{}
 }
 
-func (h *header) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	if h.Contents == nil {
+func (e *element) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	if e.Contents == nil {
 		return d.Skip()
 	}
 
@@ -136,13 +141,13 @@ func (h *header) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 
 		switch el := t.(type) {
 		case xml.EndElement:
-			if el.Name.Local == "Header" {
+			if el.Name.Local == e.Name {
 				return nil
 			}
 
 			return fmt.Errorf("soap: Unexpected EndElement")
 		case xml.StartElement:
-			err = d.DecodeElement(h.Contents, &el)
+			err = d.DecodeElement(e.Contents, &el)
 			if err != nil {
 				return err
 			}
@@ -150,11 +155,11 @@ func (h *header) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	}
 }
 
-func (h header) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+func (el element) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	t := xml.StartElement{
 		Name: xml.Name{
 			Space: XMLSpaceEnvelope,
-			Local: "Header",
+			Local: el.Name,
 		},
 	}
 
@@ -163,67 +168,8 @@ func (h header) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 		return err
 	}
 
-	if h.Contents != nil {
-		err = e.Encode(h.Contents)
-		if err != nil {
-			return err
-		}
-	}
-
-	err = e.EncodeToken(t.End())
-	if err != nil {
-		return err
-	}
-
-	return e.Flush()
-}
-
-type body struct {
-	Contents interface{}
-}
-
-func (b *body) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	if b.Contents == nil {
-		return d.Skip()
-	}
-
-	for {
-		t, err := d.Token()
-		if err != nil {
-			return err
-		}
-
-		switch el := t.(type) {
-		case xml.EndElement:
-			if el.Name.Local == "Body" {
-				return nil
-			}
-
-			return fmt.Errorf("soap: Unexpected EndElement")
-		case xml.StartElement:
-			err = d.DecodeElement(b.Contents, &el)
-			if err != nil {
-				return err
-			}
-		}
-	}
-}
-
-func (b body) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	t := xml.StartElement{
-		Name: xml.Name{
-			Space: XMLSpaceEnvelope,
-			Local: "Body",
-		},
-	}
-
-	err := e.EncodeToken(t)
-	if err != nil {
-		return err
-	}
-
-	if b.Contents != nil {
-		err = e.Encode(b.Contents)
+	if el.Contents != nil {
+		err = e.Encode(el.Contents)
 		if err != nil {
 			return err
 		}
