@@ -11,6 +11,14 @@ import (
 	"time"
 )
 
+func assertEqual(t *testing.T, want, got interface{}) {
+	if reflect.DeepEqual(want, got) {
+		return
+	}
+
+	t.Fatalf("Not equal\nwant: %v\ngot:  %v", want, got)
+}
+
 func assertEncode(t *testing.T, v interface{}, want string) {
 	var b bytes.Buffer
 
@@ -24,12 +32,23 @@ func assertEncode(t *testing.T, v interface{}, want string) {
 	assertEqual(t, want, b.String())
 }
 
-func assertEqual(t *testing.T, want, got interface{}) {
-	if reflect.DeepEqual(want, got) {
+func assertHeader(t *testing.T, want, got Header) {
+	assertEqual(t, want.ID, got.ID)
+	assertEqual(t, want.SessionTimeout, got.SessionTimeout)
+	assertEqual(t, want.HoldRequests, got.HoldRequests)
+	assertEqual(t, want.UseCWMPVersion, got.UseCWMPVersion)
+
+	if want.SupportedCWMPVersions == nil && got.SupportedCWMPVersions == nil {
 		return
 	}
 
-	t.Fatalf("Not equal\nwant: %v\ngot:  %v", want, got)
+	if want.SupportedCWMPVersions == nil && got.SupportedCWMPVersions != nil {
+		t.Fatal("Expected nil SupportedCWMPVersions")
+	}
+
+	if len(*want.SupportedCWMPVersions) != len(*got.SupportedCWMPVersions) {
+		t.Fatalf("SupportedCWMPVersions lengths aren't equal\nwant: %d\ngot:  %d", len(*want.SupportedCWMPVersions), len(*got.SupportedCWMPVersions))
+	}
 }
 
 func assertInform(t *testing.T, want, got Inform) {
@@ -59,27 +78,6 @@ func assertInform(t *testing.T, want, got Inform) {
 		assertEqual(t, p.Name, got.ParameterList[i].Name)
 		assertEqual(t, p.Value, got.ParameterList[i].Value)
 	}
-}
-
-func testDecodeInform(t *testing.T, filename string, want Inform) {
-	f, err := os.Open(filename)
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-
-	d := xml.NewDecoder(f)
-
-	e, err := Decode(d)
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-
-	got, ok := e.Body.(*Inform)
-	if !ok {
-		t.Fatal("Body is not type Inform")
-	}
-
-	assertInform(t, want, *got)
 }
 
 func assertFault(t *testing.T, want, got Fault) {
@@ -168,6 +166,28 @@ func TestDecodeFault(t *testing.T) {
 		},
 	})
 }
+
+func testDecodeInform(t *testing.T, filename string, want Inform) {
+	f, err := os.Open(filename)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	d := xml.NewDecoder(f)
+
+	e, err := Decode(d)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	got, ok := e.Body.(*Inform)
+	if !ok {
+		t.Fatal("Body is not type Inform")
+	}
+
+	assertInform(t, want, *got)
+}
+
 
 func TestDecodeInform(t *testing.T) {
 	testDecodeInform(t, "testdata/inform.xml", Inform{
@@ -292,25 +312,6 @@ func TestDecodeHeaderPartial(t *testing.T) {
 	*want.SupportedCWMPVersions = CWMPVersions{"1.0","1.1","1.4"}
 
 	assertHeader(t, want, *h)
-}
-
-func assertHeader(t *testing.T, want, got Header) {
-	assertEqual(t, want.ID, got.ID)
-	assertEqual(t, want.SessionTimeout, got.SessionTimeout)
-	assertEqual(t, want.HoldRequests, got.HoldRequests)
-	assertEqual(t, want.UseCWMPVersion, got.UseCWMPVersion)
-
-	if want.SupportedCWMPVersions == nil && got.SupportedCWMPVersions == nil {
-		return
-	}
-
-	if want.SupportedCWMPVersions == nil && got.SupportedCWMPVersions != nil {
-		t.Fatal("Expected nil SupportedCWMPVersions")
-	}
-
-	if len(*want.SupportedCWMPVersions) != len(*got.SupportedCWMPVersions) {
-		t.Fatalf("SupportedCWMPVersions lengths aren't equal\nwant: %d\ngot:  %d", len(*want.SupportedCWMPVersions), len(*got.SupportedCWMPVersions))
-	}
 }
 
 func TestEncodeInformResponse(t *testing.T) {
