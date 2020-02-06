@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
+	"sort"
 	"io"
 )
 
@@ -61,7 +62,16 @@ func (p *prefixer) push(start xml.StartElement) xml.StartElement{
 	var attrs []xml.Attr
 
 	if len(p.stack) == 1 {
-		for space, prefix := range p.p {
+		var spaces []string
+
+		for space := range p.p {
+			spaces = append(spaces, space)
+		}
+
+		sort.Strings(spaces)
+
+		for _, space := range spaces {
+			prefix := p.p[space]
 			attr := xml.Attr{
 				Name: xml.Name{
 					Local: fmt.Sprintf("xmlns:%s", prefix),
