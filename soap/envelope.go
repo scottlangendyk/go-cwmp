@@ -26,11 +26,6 @@ func startElement(d *xml.Decoder) (*xml.StartElement, error) {
 	}
 }
 
-type Header interface {
-	MustUnderstand() bool
-	Name() xml.Name
-}
-
 type Envelope struct {
 	Header interface{}
 	Body   interface{}
