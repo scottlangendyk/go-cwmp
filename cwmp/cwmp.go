@@ -3,12 +3,13 @@ package cwmp
 import (
 	"../soap"
 	"encoding/xml"
+	"strings"
 	"time"
 )
 
 const XMLSpace = "urn:dslforum-org:cwmp-1-0"
 
-var (
+const (
 	ACSMethodNotSupported = 8000
 	ACSRequestDenied      = 8001
 	ACSInternalError      = 8002
@@ -32,64 +33,53 @@ var (
 	CPEInvalidUUID                 = 9022
 )
 
-type ID string
+type CWMPVersions []string
 
-func (_ ID) MustUnderstand() bool {
-	return true
+func (v *CWMPVersions) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	var s string
+
+	err := d.DecodeElement(&s, &start)
+	if err != nil {
+		return err
+	}
+
+	*v = strings.Split(s, ",")
+
+	return nil
 }
 
-type HoldRequests bool
-
-func (_ HoldRequests) MustUnderstand() bool {
-	return true
+type Header struct {
+	ID                    *string
+	HoldRequests          *bool
+	SessionTimeout        *uint
+	SupportedCWMPVersions *CWMPVersions
+	UseCWMPVersion        *string
 }
-
-type SessionTimeout uint
-
-func (_ SessionTimeout) MustUnderstand() bool {
-	return false
-}
-
-type SupportedCWMPVersions []string
-
-func (_ SupportedCWMPVersions) MustUnderstand() bool {
-	return false
-}
-
-type UseCWMPVersion string
-
-func (_ UseCWMPVersion) MustUnderstand() bool {
-	return true
-}
-
-type Header []interface{}
 
 func (h *Header) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	var hdr interface{}
 
 	switch start.Name.Local {
 	case "ID":
-		hdr = new(ID)
+		h.ID = new(string)
+		hdr = h.ID
 	case "HoldRequests":
-		hdr = new(HoldRequests)
+		h.HoldRequests = new(bool)
+		hdr = h.HoldRequests
 	case "SessionTimeout":
-		hdr = new(SessionTimeout)
+		h.SessionTimeout = new(uint)
+		hdr = h.SessionTimeout
 	case "SupportedCWMPVersions":
-		hdr = new(SupportedCWMPVersions)
+		h.SupportedCWMPVersions = new(CWMPVersions)
+		hdr = h.SupportedCWMPVersions
 	case "UseCWMPVersion":
-		hdr = new(UseCWMPVersion)
+		h.UseCWMPVersion = new(string)
+		hdr = h.UseCWMPVersion
 	default:
 		return d.Skip()
 	}
 
-	err := d.DecodeElement(hdr, &start)
-	if err != nil {
-		return err
-	}
-
-	*h = append(*h, hdr)
-
-	return nil
+	return d.DecodeElement(hdr, &start)
 }
 
 func Decode(d *xml.Decoder) (*soap.Envelope, error) {
@@ -182,44 +172,14 @@ type GetRPCMethods struct {
 }
 
 type GetRPCMethodsResponse struct {
-	MethodList []string
-}
-
-func (msg *GetRPCMethodsResponse) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	return d.Skip()
-
-	l := []string{}
-
-	for {
-		t, err := d.Token()
-		if err != nil {
-			return err
-		}
-
-		el, ok := t.(xml.StartElement)
-		if !ok {
-			break
-		}
-
-		var s string
-
-		err = d.DecodeElement(&s, &el)
-		if err != nil {
-			return err
-		}
-
-		l = append(l, s)
-	}
-
-	msg.MethodList = l
-
-	return d.Skip()
+	MethodList []string `xml:"MethodList>string"`
 }
 
 type Fault struct {
 	XMLName xml.Name `xml:"urn:dslforum-org:cwmp-1-0 Fault"`
 	Code    uint     `xml:"FaultCode"`
 	String  string   `xml:"FaultString"`
+	SetParameterValuesFault []SetParameterValuesFault
 }
 
 type TransferComplete struct {
@@ -306,10 +266,56 @@ type ParameterValue struct {
 type SetParameterValues struct {
 	XMLName       xml.Name `xml:"urn:dslforum-org:cwmp-1-0 SetParameterValues"`
 	ParameterList []ParameterValue
-	ParameterKey  string
+	ParameterKey  string `xml:"ParameterKey"`
 }
 
 type SetParameterValuesResponse struct {
 	XMLName xml.Name `xml:"urn:dslforum-org:cwmp-1-0 SetParameterValuesResponse"`
 	Status  bool
+}
+
+type DeviceID struct {
+	Manufacturer string `xml:"Manufacturer"`
+	OUI          string `xml:"OUI"`
+	ProductClass string `xml:"ProductClass"`
+	SerialNumber string `xml:"SerialNumber"`
+}
+
+type Event struct {
+	EventCode  string `xml:"EventCode"`
+	CommandKey string `xml:"CommandKey"`
+}
+
+type Inform struct {
+	RetryCount    uint             `xml:"RetryCount"`
+	CurrentTime   time.Time        `xml:"CurrentTime"`
+	MaxEnvelopes  uint             `xml:"MaxEnvelopes"`
+	DeviceID      DeviceID         `xml:"DeviceId"`
+	Event         []Event          `xml:"Event>EventStruct"`
+	ParameterList []ParameterValue `xml:"ParameterList>ParameterValueStruct"`
+}
+
+type InformResponse struct {
+	MaxEnvelopes uint `xml:"MaxEnvelopes"`
+}
+
+func (r InformResponse) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	s := xml.StartElement{Name: xml.Name{Space: XMLSpace, Local: "InformResponse"}}
+	err := e.EncodeToken(s)
+	if err != nil {
+		return err
+	}
+
+	err = e.EncodeElement(1, xml.StartElement{Name: xml.Name{Local: "MaxEnvelopes"}})
+	if err != nil {
+		return err
+	}
+
+	return e.EncodeToken(s.End())
+}
+
+type SetParameterValuesFault struct {
+	Code uint `xml:"FaultCode"`
+	String string `xml:"FaultString"`
+	Name string `xml:"ParameterName"`
 }
