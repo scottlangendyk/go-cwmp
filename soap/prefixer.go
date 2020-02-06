@@ -8,8 +8,8 @@ import (
 )
 
 type Prefixer interface {
+	io.Writer
 	Error() error
-	Write(w []byte) (int, error)
 }
 
 func NewPrefixer(w io.Writer, p map[string]string) Prefixer {
