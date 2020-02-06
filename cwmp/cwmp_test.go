@@ -244,7 +244,7 @@ func TestDecodeHeader(t *testing.T) {
 	want := Header{
 		ID: new(string),
 		SessionTimeout: new(uint),
-		HoldRequests: new(HoldRequests),
+		HoldRequests: new(bool),
 		UseCWMPVersion: new(string),
 		SupportedCWMPVersions: new(CWMPVersions),
 	}
@@ -335,7 +335,7 @@ func TestEncodeGetRPCMethodsResponse(t *testing.T) {
 func TestEncodeHeader(t *testing.T) {
 	v := &Header{
 		ID: new(string),
-		HoldRequests: new(HoldRequests),
+		HoldRequests: new(bool),
 		SessionTimeout: new(uint),
 		UseCWMPVersion: new(string),
 		SupportedCWMPVersions: new(CWMPVersions),
@@ -347,13 +347,13 @@ func TestEncodeHeader(t *testing.T) {
 	*v.UseCWMPVersion = "1.4"
 	*v.SupportedCWMPVersions = CWMPVersions{"1.0","1.1","1.4"}
 
-	want := `<Header xmlns="urn:dslforum-org:cwmp-1-0"><ID>1234</ID><HoldRequests>1</HoldRequests><SessionTimeout>2</SessionTimeout><SupportedCWMPVersions>1.0,1.1,1.4</SupportedCWMPVersions><UseCWMPVersion>1.4</UseCWMPVersion></Header>`
+	want := `<Header xmlns="http://schemas.xmlsoap.org/soap/envelope/"><ID xmlns="urn:dslforum-org:cwmp-1-0" xmlns:envelope="http://schemas.xmlsoap.org/soap/envelope/" envelope:mustUnderstand="1">1234</ID><HoldRequests xmlns="urn:dslforum-org:cwmp-1-0" xmlns:envelope="http://schemas.xmlsoap.org/soap/envelope/" envelope:mustUnderstand="1">1</HoldRequests><SessionTimeout xmlns="urn:dslforum-org:cwmp-1-0">2</SessionTimeout><SupportedCWMPVersions xmlns="urn:dslforum-org:cwmp-1-0">1.0,1.1,1.4</SupportedCWMPVersions><UseCWMPVersion xmlns="urn:dslforum-org:cwmp-1-0" xmlns:envelope="http://schemas.xmlsoap.org/soap/envelope/" envelope:mustUnderstand="1">1.4</UseCWMPVersion></Header>` 
 
 	assertEncode(t, v, want)
 }
 
 func TestEncodeHeaderEmpty(t *testing.T) {
-	want := `<Header xmlns="urn:dslforum-org:cwmp-1-0"></Header>`
+	want := `<Header xmlns="http://schemas.xmlsoap.org/soap/envelope/"></Header>`
 
 	assertEncode(t, &Header{}, want)
 }
@@ -367,7 +367,7 @@ func TestEncodeHeaderPartial(t *testing.T) {
 	*v.SessionTimeout = 2
 	*v.SupportedCWMPVersions = CWMPVersions{"1.0","1.1","1.4"}
 
-	want := `<Header xmlns="urn:dslforum-org:cwmp-1-0"><SessionTimeout>2</SessionTimeout><SupportedCWMPVersions>1.0,1.1,1.4</SupportedCWMPVersions></Header>`
+	want := `<Header xmlns="http://schemas.xmlsoap.org/soap/envelope/"><SessionTimeout xmlns="urn:dslforum-org:cwmp-1-0">2</SessionTimeout><SupportedCWMPVersions xmlns="urn:dslforum-org:cwmp-1-0">1.0,1.1,1.4</SupportedCWMPVersions></Header>`
 
 	assertEncode(t, v, want)
 }

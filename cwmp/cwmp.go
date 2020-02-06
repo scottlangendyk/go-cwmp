@@ -52,25 +52,84 @@ func (v *CWMPVersions) UnmarshalXML(d *xml.Decoder, start xml.StartElement) erro
 	return nil
 }
 
-type HoldRequests bool
-
-func (h HoldRequests)  MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	s := "0"
-
-	if h == true {
-		s = "1"
-	}
-
-	return e.EncodeElement(s, start)
-}
-
 type Header struct {
-	XMLName xml.Name `xml:"urn:dslforum-org:cwmp-1-0 Header"`
 	ID                    *string
-	HoldRequests          *HoldRequests
+	HoldRequests          *bool
 	SessionTimeout        *uint
 	SupportedCWMPVersions *CWMPVersions
 	UseCWMPVersion        *string
+}
+
+func (h Header) startElement(local string, mustUnderstand bool) xml.StartElement {
+	start := xml.StartElement{
+		Name: xml.Name{
+			Local: local,
+			Space: XMLSpace,
+		},
+	}
+
+	if mustUnderstand {
+		start.Attr = []xml.Attr{
+			xml.Attr{
+				Name: xml.Name{
+					Space: soap.XMLSpaceEnvelope,
+					Local: "mustUnderstand",
+				},
+				Value: "1",
+			},
+		}
+	}
+
+	return start
+}
+
+func (h Header) encodeHoldRequests(e *xml.Encoder) error {
+	if h.HoldRequests == nil {
+		return nil
+	}
+
+	if *h.HoldRequests == true {
+		return e.EncodeElement("1", h.startElement("HoldRequests", true))
+	}
+
+	return e.EncodeElement("0", h.startElement("HoldRequests", true))
+}
+
+func (h Header) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	start.Name.Local = "Header"
+	start.Name.Space = soap.XMLSpaceEnvelope
+
+	err := e.EncodeToken(start)
+	if err != nil {
+		return err
+	}
+
+	err = e.EncodeElement(h.ID, h.startElement("ID", true))
+	if err != nil {
+		return err
+	}
+
+	err = h.encodeHoldRequests(e)
+	if err != nil {
+		return err
+	}
+
+	err = e.EncodeElement(h.SessionTimeout, h.startElement("SessionTimeout", false))
+	if err != nil {
+		return err
+	}
+
+	err = e.EncodeElement(h.SupportedCWMPVersions, h.startElement("SupportedCWMPVersions", false))
+	if err != nil {
+		return err
+	}
+
+	err = e.EncodeElement(h.UseCWMPVersion, h.startElement("UseCWMPVersion", true))
+	if err != nil {
+		return err
+	}
+
+	return e.EncodeToken(start.End())
 }
 
 func (h *Header) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
@@ -81,7 +140,7 @@ func (h *Header) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 		h.ID = new(string)
 		hdr = h.ID
 	case "HoldRequests":
-		h.HoldRequests = new(HoldRequests)
+		h.HoldRequests = new(bool)
 		hdr = h.HoldRequests
 	case "SessionTimeout":
 		h.SessionTimeout = new(uint)
