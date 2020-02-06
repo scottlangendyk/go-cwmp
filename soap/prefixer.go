@@ -19,11 +19,16 @@ func NewPrefixer(w io.Writer, p map[string]string) Prefixer {
 	}
 }
 
+type stackItem struct {
+	Start *xml.StartElement
+	Prefixes map[string]string
+}
+
 type prefixer struct {
-	p     map[string]string
+	p    map[string]string
+	stack []*stackItem
 	b     bytes.Buffer
 	e     *xml.Encoder
-	start []xml.StartElement
 	err   error
 }
 
@@ -31,36 +36,93 @@ func (p *prefixer) Error() error {
 	return p.err
 }
 
-func (p *prefixer) prefixStartElement(start xml.StartElement) xml.StartElement {
-	s := xml.StartElement{
-		Name: start.Name,
+func (p *prefixer) prefixForNamespace(ns string) string {
+	for i := len(p.stack)-1; i >=0; i-- {
+		for space, prefix := range p.stack[i].Prefixes {
+			if space == ns {
+				return prefix
+			}
+		}
+	}
+
+	return ""
+}
+
+func (p *prefixer) push(start xml.StartElement) xml.StartElement{
+	item := &stackItem{
+		Start: &xml.StartElement{
+			Name: start.Name,
+		},
+		Prefixes: make(map[string]string),
+	}
+
+	p.stack = append(p.stack, item)
+
+	var attrs []xml.Attr
+
+	if len(p.stack) == 1 {
+		for space, prefix := range p.p {
+			attr := xml.Attr{
+				Name: xml.Name{
+					Local: fmt.Sprintf("xmlns:%s", prefix),
+				},
+				Value: space,
+			}
+
+			attrs = append(attrs, attr)
+			item.Prefixes[space] = prefix
+		}
 	}
 
 	for _, attr := range start.Attr {
-		if attr.Name.Local == "xmlns" && p.p[attr.Value] != "" {
-			s.Name.Local = fmt.Sprintf("%s:%s", p.p[attr.Value], start.Name.Local)
+		if attr.Name.Local == "xmlns" && attr.Name.Space == "" {
+			pfx := p.prefixForNamespace(attr.Value)
 
-		} else {
-			s.Attr = append(s.Attr, attr)
-		}
-	}
+			if pfx == "" {
+				attrs = append(attrs, attr)
+				continue
+			}
 
-	if len(p.start) > 0 {
-		return s
-	}
+			item.Start.Name.Local = fmt.Sprintf("%s:%s", pfx, item.Start.Name.Local)
 
-	for space, prefix := range p.p {
-		attr := xml.Attr{
-			Name: xml.Name{
-				Local: fmt.Sprintf("xmlns:%s", prefix),
-			},
-			Value: space,
+			continue
 		}
 
-		s.Attr = append(s.Attr, attr)
+		if attr.Name.Space == "xmlns" {
+			pfx := p.prefixForNamespace(attr.Value)
+
+			if pfx == "" {
+				item.Prefixes[attr.Value] = attr.Name.Local
+				attrs = append(attrs, attr)
+				continue
+			}
+
+			item.Prefixes[attr.Name.Local] = pfx
+
+			continue
+		}
+
+		attrs = append(attrs, attr)
 	}
 
-	return s
+	for _, attr := range attrs {
+		pfx := p.prefixForNamespace(attr.Name.Space)
+
+		if pfx != "" {
+			attr.Name.Space = ""
+			attr.Name.Local = fmt.Sprintf("%s:%s", pfx, attr.Name.Local)
+		}
+
+		item.Start.Attr = append(item.Start.Attr, attr)
+	}
+
+	return *item.Start 
+}
+
+func (p *prefixer) pop() xml.EndElement {
+	s := p.stack[len(p.stack)-1]
+	p.stack = p.stack[:len(p.stack)-1]
+	return s.Start.End()
 }
 
 func (p *prefixer) Write(w []byte) (int, error) {
@@ -83,13 +145,9 @@ func (p *prefixer) Write(w []byte) (int, error) {
 
 		switch el := t.(type) {
 		case xml.StartElement:
-			start := p.prefixStartElement(el)
-			p.start = append(p.start, start)
-			t = start
+			t = p.push(el)
 		case xml.EndElement:
-			end := p.start[len(p.start)-1]
-			p.start = p.start[:len(p.start)-1]
-			t = end.End()
+			t = p.pop()
 		}
 
 		err = p.e.EncodeToken(t)
