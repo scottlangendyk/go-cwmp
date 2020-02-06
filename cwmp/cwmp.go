@@ -35,6 +35,10 @@ const (
 
 type CWMPVersions []string
 
+func (v CWMPVersions) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	return e.EncodeElement(strings.Join(v, ","), start)
+}
+
 func (v *CWMPVersions) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	var s string
 
@@ -48,9 +52,22 @@ func (v *CWMPVersions) UnmarshalXML(d *xml.Decoder, start xml.StartElement) erro
 	return nil
 }
 
+type HoldRequests bool
+
+func (h HoldRequests)  MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	s := "0"
+
+	if h == true {
+		s = "1"
+	}
+
+	return e.EncodeElement(s, start)
+}
+
 type Header struct {
+	XMLName xml.Name `xml:"urn:dslforum-org:cwmp-1-0 Header"`
 	ID                    *string
-	HoldRequests          *bool
+	HoldRequests          *HoldRequests
 	SessionTimeout        *uint
 	SupportedCWMPVersions *CWMPVersions
 	UseCWMPVersion        *string
@@ -64,7 +81,7 @@ func (h *Header) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 		h.ID = new(string)
 		hdr = h.ID
 	case "HoldRequests":
-		h.HoldRequests = new(bool)
+		h.HoldRequests = new(HoldRequests)
 		hdr = h.HoldRequests
 	case "SessionTimeout":
 		h.SessionTimeout = new(uint)

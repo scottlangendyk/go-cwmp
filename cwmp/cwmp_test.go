@@ -224,7 +224,7 @@ func TestDecodeHeader(t *testing.T) {
 	want := Header{
 		ID: new(string),
 		SessionTimeout: new(uint),
-		HoldRequests: new(bool),
+		HoldRequests: new(HoldRequests),
 		UseCWMPVersion: new(string),
 		SupportedCWMPVersions: new(CWMPVersions),
 	}
@@ -235,9 +235,63 @@ func TestDecodeHeader(t *testing.T) {
 	*want.UseCWMPVersion = "1.4"
 	*want.SupportedCWMPVersions = CWMPVersions{"1.0","1.1","1.4"}
 
-	got := *h
+	assertHeader(t, want, *h)
+}
 
-	assertHeader(t, want, got)
+func TestDecodeHeaderEmpty(t *testing.T) {
+	input := `<soapenv:Envelope>
+	<soapenv:Header>
+	</soapenv:Header>
+	<soapenv:Body>
+	</soapenv:Body>
+</soapenv:Envelope>`
+
+	d := xml.NewDecoder(strings.NewReader(input))
+
+	e, err := Decode(d)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	h, ok := e.Header.(*Header)
+	if !ok {
+		t.Fatal("Not a header")
+	}
+
+	assertHeader(t, Header{}, *h)
+}
+
+func TestDecodeHeaderPartial(t *testing.T) {
+	input := `<soapenv:Envelope>
+	<soapenv:Header>
+		<cwmp:SessionTimeout>2</cwmp:SessionTimeout>
+		<cwmp:SupportedCWMPVersions>1.0,1.1,1.4</cwmp:SupportedCWMPVersions>
+	</soapenv:Header>
+	<soapenv:Body>
+	</soapenv:Body>
+</soapenv:Envelope>`
+
+	d := xml.NewDecoder(strings.NewReader(input))
+
+	e, err := Decode(d)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	h, ok := e.Header.(*Header)
+	if !ok {
+		t.Fatal("Not a header")
+	}
+
+	want := Header{
+		SessionTimeout: new(uint),
+		SupportedCWMPVersions: new(CWMPVersions),
+	}
+
+	*want.SessionTimeout = 2
+	*want.SupportedCWMPVersions = CWMPVersions{"1.0","1.1","1.4"}
+
+	assertHeader(t, want, *h)
 }
 
 func assertHeader(t *testing.T, want, got Header) {
@@ -245,6 +299,14 @@ func assertHeader(t *testing.T, want, got Header) {
 	assertEqual(t, want.SessionTimeout, got.SessionTimeout)
 	assertEqual(t, want.HoldRequests, got.HoldRequests)
 	assertEqual(t, want.UseCWMPVersion, got.UseCWMPVersion)
+
+	if want.SupportedCWMPVersions == nil && got.SupportedCWMPVersions == nil {
+		return
+	}
+
+	if want.SupportedCWMPVersions == nil && got.SupportedCWMPVersions != nil {
+		t.Fatal("Expected nil SupportedCWMPVersions")
+	}
 
 	if len(*want.SupportedCWMPVersions) != len(*got.SupportedCWMPVersions) {
 		t.Fatalf("SupportedCWMPVersions lengths aren't equal\nwant: %d\ngot:  %d", len(*want.SupportedCWMPVersions), len(*got.SupportedCWMPVersions))
@@ -265,6 +327,46 @@ func TestEncodeGetRPCMethodsResponse(t *testing.T) {
 	}
 
 	want := `<GetRPCMethodsResponse><MethodList><string>Method1</string><string>Method2</string></MethodList></GetRPCMethodsResponse>`
+
+	assertEncode(t, v, want)
+}
+
+func TestEncodeHeader(t *testing.T) {
+	v := &Header{
+		ID: new(string),
+		HoldRequests: new(HoldRequests),
+		SessionTimeout: new(uint),
+		UseCWMPVersion: new(string),
+		SupportedCWMPVersions: new(CWMPVersions),
+	}
+
+	*v.ID = "1234"
+	*v.HoldRequests = true
+	*v.SessionTimeout = 2
+	*v.UseCWMPVersion = "1.4"
+	*v.SupportedCWMPVersions = CWMPVersions{"1.0","1.1","1.4"}
+
+	want := `<Header xmlns="urn:dslforum-org:cwmp-1-0"><ID>1234</ID><HoldRequests>1</HoldRequests><SessionTimeout>2</SessionTimeout><SupportedCWMPVersions>1.0,1.1,1.4</SupportedCWMPVersions><UseCWMPVersion>1.4</UseCWMPVersion></Header>`
+
+	assertEncode(t, v, want)
+}
+
+func TestEncodeHeaderEmpty(t *testing.T) {
+	want := `<Header xmlns="urn:dslforum-org:cwmp-1-0"></Header>`
+
+	assertEncode(t, &Header{}, want)
+}
+
+func TestEncodeHeaderPartial(t *testing.T) {
+	v := &Header{
+		SessionTimeout: new(uint),
+		SupportedCWMPVersions: new(CWMPVersions),
+	}
+
+	*v.SessionTimeout = 2
+	*v.SupportedCWMPVersions = CWMPVersions{"1.0","1.1","1.4"}
+
+	want := `<Header xmlns="urn:dslforum-org:cwmp-1-0"><SessionTimeout>2</SessionTimeout><SupportedCWMPVersions>1.0,1.1,1.4</SupportedCWMPVersions></Header>`
 
 	assertEncode(t, v, want)
 }
