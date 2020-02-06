@@ -13,7 +13,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println(r.Cookies())
 
-	if r.Header.Get("Content-Length") == "0" {
+	if r.ContentLength == 0 {
 		w.WriteHeader(204)
 		return
 	}
@@ -57,5 +57,5 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/", handler)
 
-	http.ListenAndServe(":8081", nil)
+	http.ListenAndServe("0.0.0.0:8081", nil)
 }
