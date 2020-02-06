@@ -326,7 +326,7 @@ func TestEncodeGetRPCMethodsResponse(t *testing.T) {
 		MethodList: []string{"Method1", "Method2"},
 	}
 
-	want := `<GetRPCMethodsResponse><MethodList><string>Method1</string><string>Method2</string></MethodList></GetRPCMethodsResponse>`
+	want := `<GetRPCMethodsResponse xmlns="urn:dslforum-org:cwmp-1-0"><MethodList><string>Method1</string><string>Method2</string></MethodList></GetRPCMethodsResponse>`
 
 	assertEncode(t, v, want)
 }

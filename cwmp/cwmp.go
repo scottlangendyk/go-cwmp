@@ -177,7 +177,7 @@ func (b *body) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 
 type Reboot struct {
 	XMLName    xml.Name `xml:"urn:dslforum-org:cwmp-1-0 Reboot"`
-	CommandKey string   `xml:"CommandKey"`
+	CommandKey string
 }
 
 type RebootResponse struct {
@@ -189,6 +189,7 @@ type GetRPCMethods struct {
 }
 
 type GetRPCMethodsResponse struct {
+	XMLName xml.Name `xml:"urn:dslforum-org:cwmp-1-0 GetRPCMethodsResponse"`
 	MethodList []string `xml:"MethodList>string"`
 }
 
@@ -201,10 +202,10 @@ type Fault struct {
 
 type TransferComplete struct {
 	XMLName      xml.Name  `xml:"urn:dslforum-org:cwmp-1-0 TransferComplete"`
-	CommandKey   string    `xml:"CommandKey"`
+	CommandKey   string
 	Fault        Fault     `xml:"FaultStruct"`
-	StartTime    time.Time `xml"StartTime"`
-	CompleteTime time.Time `xml:"CompleteTime"`
+	StartTime    time.Time
+	CompleteTime time.Time
 }
 
 type TransferCompleteResponse struct {
@@ -213,15 +214,15 @@ type TransferCompleteResponse struct {
 
 type AutonomousTransferComplete struct {
 	XMLName        xml.Name  `xml:"urn:dslforum-org:cwmp-1-0 AutonomousTransferComplete"`
-	AnnounceURL    string    `xml:"AnnounceURL"`
-	TransferURL    string    `xml:"TranserURL"`
-	IsDownload     bool      `xml:"IsDownload"`
-	FileType       string    `xml:"FileType"`
-	FileSize       uint      `xml:"FileSize"`
-	TargetFileName string    `xml:"TargetFileName"`
+	AnnounceURL    string
+	TransferURL    string
+	IsDownload     bool
+	FileType       string
+	FileSize       uint
+	TargetFileName string
 	Fault          Fault     `xml:"FaultStruct"`
-	StartTime      time.Time `xml:"StartTime"`
-	CompleteTime   time.Time `xml:"CompleteTime"`
+	StartTime      time.Time
+	CompleteTime   time.Time
 }
 
 type AutonomousTransferCompleteResponse struct {
@@ -283,7 +284,7 @@ type ParameterValue struct {
 type SetParameterValues struct {
 	XMLName       xml.Name `xml:"urn:dslforum-org:cwmp-1-0 SetParameterValues"`
 	ParameterList []ParameterValue
-	ParameterKey  string `xml:"ParameterKey"`
+	ParameterKey  string
 }
 
 type SetParameterValuesResponse struct {
@@ -292,28 +293,29 @@ type SetParameterValuesResponse struct {
 }
 
 type DeviceID struct {
-	Manufacturer string `xml:"Manufacturer"`
-	OUI          string `xml:"OUI"`
-	ProductClass string `xml:"ProductClass"`
-	SerialNumber string `xml:"SerialNumber"`
+	Manufacturer string
+	OUI          string
+	ProductClass string
+	SerialNumber string
 }
 
 type Event struct {
-	EventCode  string `xml:"EventCode"`
-	CommandKey string `xml:"CommandKey"`
+	EventCode  string
+	CommandKey string
 }
 
 type Inform struct {
-	RetryCount    uint             `xml:"RetryCount"`
-	CurrentTime   time.Time        `xml:"CurrentTime"`
-	MaxEnvelopes  uint             `xml:"MaxEnvelopes"`
+	XMLName xml.Name `xml:"urn:dslforum-org:cwmp-1-0 Inform"`
+	RetryCount    uint
+	CurrentTime   time.Time
+	MaxEnvelopes  uint
 	DeviceID      DeviceID         `xml:"DeviceId"`
 	Event         []Event          `xml:"Event>EventStruct"`
 	ParameterList []ParameterValue `xml:"ParameterList>ParameterValueStruct"`
 }
 
 type InformResponse struct {
-	MaxEnvelopes uint `xml:"MaxEnvelopes"`
+	MaxEnvelopes uint
 }
 
 func (r InformResponse) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
