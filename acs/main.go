@@ -1,28 +1,80 @@
 package main
 
 import (
-	"../cwmp"
-	"../soap"
 	"encoding/xml"
 	"fmt"
 	"net/http"
+
+	"../cwmp"
+	"../soap"
 )
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
-	fmt.Println(r.Cookies())
-
+func handleMessage(r *http.Request) (*soap.Envelope, error) {
 	if r.ContentLength == 0 {
-		w.WriteHeader(204)
-		return
+		return nil, nil
 	}
 
 	d := xml.NewDecoder(r.Body)
 
 	msg, err := cwmp.Decode(d)
 	if err != nil {
-		fmt.Println(err)
+		return nil, err
+	}
+
+	switch h := msg.Header.(type) {
+	case *cwmp.Header:
+		if h.ID != nil {
+			fmt.Println(*h.ID)
+		}
+	}
+
+	switch m := msg.Body.(type) {
+	case *cwmp.Inform:
+		fmt.Println(m)
+		msg = &soap.Envelope{
+			Body: &cwmp.InformResponse{},
+		}
+	case *cwmp.GetRPCMethods:
+		msg = &soap.Envelope{
+			Body: &cwmp.GetRPCMethodsResponse{
+				MethodList: []string{
+					"Inform",
+					"GetRPCMethods",
+					"TransferComplete",
+				},
+			},
+		}
+	case *cwmp.TransferComplete:
+		msg = &soap.Envelope{
+			Body: &cwmp.TransferCompleteResponse{},
+		}
+	default:
+		msg = &soap.Envelope{
+			Body: &soap.Fault{
+				Code:   "Client",
+				String: "CWMP fault",
+				Detail: &cwmp.Fault{
+					Code:   cwmp.ACSMethodNotSupported,
+					String: "Method not supported",
+				},
+			},
+		}
+	}
+
+	return msg, nil
+}
+
+func handler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	msg, err := handleMessage(r)
+	if err != nil {
+		w.WriteHeader(500)
+		return
+	}
+
+	if msg == nil {
+		w.WriteHeader(204)
 		return
 	}
 
@@ -33,24 +85,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	e := xml.NewEncoder(p)
 
-	switch h := msg.Header.(type) {
-	case *cwmp.Header:
-		fmt.Println(h)
-	}
-
-	switch m := msg.Body.(type) {
-	case *cwmp.Inform:
-		fmt.Println(m)
-		http.SetCookie(w, &http.Cookie{Name: "test", Value: "test"})
-		e.Encode(&soap.Envelope{
-			Body: &cwmp.InformResponse{},
-		})
-	case *soap.Fault:
-		fmt.Println(m.Detail)
-	default:
-		w.Header().Del("Content-Type")
-		w.Header().Del("SOAPAction")
-		w.WriteHeader(204)
+	err = e.Encode(msg)
+	if err != nil {
+		w.WriteHeader(500)
+		return
 	}
 }
 
