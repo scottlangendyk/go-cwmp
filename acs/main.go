@@ -10,6 +10,8 @@ import (
 )
 
 func handleMessage(r *http.Request) (*soap.Envelope, error) {
+	defer r.Body.Close()
+
 	if r.ContentLength == 0 {
 		return nil, nil
 	}
@@ -65,8 +67,6 @@ func handleMessage(r *http.Request) (*soap.Envelope, error) {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
 	msg, err := handleMessage(r)
 	if err != nil {
 		w.WriteHeader(500)
