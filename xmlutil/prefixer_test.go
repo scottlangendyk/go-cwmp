@@ -6,6 +6,33 @@ import (
 	"testing"
 )
 
+func TestPrefixerUnknownNamespace(t *testing.T) {
+	input := `<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/"><Header xmlns="http://schemas.xmlsoap.org/soap/envelope/"><tag xmlns="dontchangethis" xmlns:unknown="dontchangethiseither"><unknown:test>Something</unknwon:test></tag><ID xmlns="urn:dslforum-org:cwmp-1-0" xmlns:envelope="http://schemas.xmlsoap.org/soap/envelope/" envelope:mustUnderstand="1">1234</ID><SessionTimeout xmlns="urn:dslforum-org:cwmp-1-0">2</SessionTimeout><SupportedCWMPVersions xmlns="urn:dslforum-org:cwmp-1-0">1.0,1.1,1.4</SupportedCWMPVersions></Header><Body xmlns="http://schemas.xmlsoap.org/soap/envelope/"><InformResponse xmlns="urn:dslforum-org:cwmp-1-0"><MaxEnvelopes>1</MaxEnvelopes></InformResponse></Body></Envelope>`
+
+	var b bytes.Buffer
+
+	p := NewPrefixer(&b, map[string]string{
+		"http://schemas.xmlsoap.org/soap/envelope/": "soapenv",
+		"urn:dslforum-org:cwmp-1-0":                 "cwmp",
+	})
+
+	_, err := fmt.Fprint(p, input)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	if p.Error() != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	want := `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-0"><soapenv:Header><tag xmlns="dontchangethis" xmlns:unknown="dontchangethiseither"><unknown:test>Something</unknown:test></tag><cwmp:ID soapenv:mustUnderstand="1">1234</cwmp:ID><cwmp:SessionTimeout>2</cwmp:SessionTimeout><cwmp:SupportedCWMPVersions>1.0,1.1,1.4</cwmp:SupportedCWMPVersions></soapenv:Header><soapenv:Body><cwmp:InformResponse><MaxEnvelopes>1</MaxEnvelopes></cwmp:InformResponse></soapenv:Body></soapenv:Envelope>`
+	got := b.String()
+
+	if want != got {
+		t.Fatalf("Doesn't match\nwant: %s\ngot:  %s", want, got)
+	}
+}
+
 func TestPrefixerAttrs(t *testing.T) {
 	input := `<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/"><Header xmlns="http://schemas.xmlsoap.org/soap/envelope/"><ID xmlns="urn:dslforum-org:cwmp-1-0" xmlns:envelope="http://schemas.xmlsoap.org/soap/envelope/" envelope:mustUnderstand="1">1234</ID><SessionTimeout xmlns="urn:dslforum-org:cwmp-1-0">2</SessionTimeout><SupportedCWMPVersions xmlns="urn:dslforum-org:cwmp-1-0">1.0,1.1,1.4</SupportedCWMPVersions></Header><Body xmlns="http://schemas.xmlsoap.org/soap/envelope/"><InformResponse xmlns="urn:dslforum-org:cwmp-1-0"><MaxEnvelopes>1</MaxEnvelopes></InformResponse></Body></Envelope>`
 

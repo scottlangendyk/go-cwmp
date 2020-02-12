@@ -93,6 +93,7 @@ func (p *prefixer) push(start xml.StartElement) xml.StartElement {
 				continue
 			}
 
+			item.Start.Name.Space = ""
 			item.Start.Name.Local = fmt.Sprintf("%s:%s", pfx, item.Start.Name.Local)
 
 			continue
@@ -103,6 +104,8 @@ func (p *prefixer) push(start xml.StartElement) xml.StartElement {
 
 			if pfx == "" {
 				item.Prefixes[attr.Value] = attr.Name.Local
+				attr.Name.Space = ""
+				attr.Name.Local = fmt.Sprintf("xmlns:%s", attr.Name.Local)
 				attrs = append(attrs, attr)
 				continue
 			}
@@ -124,6 +127,11 @@ func (p *prefixer) push(start xml.StartElement) xml.StartElement {
 		}
 
 		item.Start.Attr = append(item.Start.Attr, attr)
+	}
+
+	if item.Start.Name.Space != "" {
+		item.Start.Name.Local = fmt.Sprintf("%s:%s", item.Start.Name.Space, item.Start.Name.Local)
+		item.Start.Name.Space = ""
 	}
 
 	return *item.Start
