@@ -1,10 +1,11 @@
 package cwmp
 
 import (
-	"../soap"
 	"encoding/xml"
 	"strings"
 	"time"
+
+	"../soap"
 )
 
 const XMLSpace = "urn:dslforum-org:cwmp-1-0"
@@ -248,21 +249,21 @@ type GetRPCMethods struct {
 }
 
 type GetRPCMethodsResponse struct {
-	XMLName xml.Name `xml:"urn:dslforum-org:cwmp-1-0 GetRPCMethodsResponse"`
+	XMLName    xml.Name `xml:"urn:dslforum-org:cwmp-1-0 GetRPCMethodsResponse"`
 	MethodList []string `xml:"MethodList>string"`
 }
 
 type Fault struct {
-	XMLName xml.Name `xml:"urn:dslforum-org:cwmp-1-0 Fault"`
-	Code    uint     `xml:"FaultCode"`
-	String  string   `xml:"FaultString"`
+	XMLName                 xml.Name `xml:"urn:dslforum-org:cwmp-1-0 Fault"`
+	Code                    uint     `xml:"FaultCode"`
+	String                  string   `xml:"FaultString"`
 	SetParameterValuesFault []SetParameterValuesFault
 }
 
 type TransferComplete struct {
-	XMLName      xml.Name  `xml:"urn:dslforum-org:cwmp-1-0 TransferComplete"`
+	XMLName      xml.Name `xml:"urn:dslforum-org:cwmp-1-0 TransferComplete"`
 	CommandKey   string
-	Fault        Fault     `xml:"FaultStruct"`
+	Fault        Fault `xml:"FaultStruct"`
 	StartTime    time.Time
 	CompleteTime time.Time
 }
@@ -272,14 +273,14 @@ type TransferCompleteResponse struct {
 }
 
 type AutonomousTransferComplete struct {
-	XMLName        xml.Name  `xml:"urn:dslforum-org:cwmp-1-0 AutonomousTransferComplete"`
+	XMLName        xml.Name `xml:"urn:dslforum-org:cwmp-1-0 AutonomousTransferComplete"`
 	AnnounceURL    string
 	TransferURL    string
 	IsDownload     bool
 	FileType       string
 	FileSize       uint
 	TargetFileName string
-	Fault          Fault     `xml:"FaultStruct"`
+	Fault          Fault `xml:"FaultStruct"`
 	StartTime      time.Time
 	CompleteTime   time.Time
 }
@@ -364,7 +365,7 @@ type Event struct {
 }
 
 type Inform struct {
-	XMLName xml.Name `xml:"urn:dslforum-org:cwmp-1-0 Inform"`
+	XMLName       xml.Name `xml:"urn:dslforum-org:cwmp-1-0 Inform"`
 	RetryCount    uint
 	CurrentTime   time.Time
 	MaxEnvelopes  uint
@@ -393,7 +394,7 @@ func (r InformResponse) MarshalXML(e *xml.Encoder, start xml.StartElement) error
 }
 
 type SetParameterValuesFault struct {
-	Code uint `xml:"FaultCode"`
+	Code   uint   `xml:"FaultCode"`
 	String string `xml:"FaultString"`
-	Name string `xml:"ParameterName"`
+	Name   string `xml:"ParameterName"`
 }
