@@ -7,6 +7,7 @@ import (
 
 	"../cwmp"
 	"../soap"
+	"../xmlutil"
 )
 
 func handleMessage(r *http.Request) (*soap.Envelope, error) {
@@ -81,7 +82,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/xml")
 	w.Header().Set("SOAPAction", "")
 
-	p := soap.NewPrefixer(w, map[string]string{soap.XMLSpaceEnvelope: "soapenv", cwmp.XMLSpace: "cwmp"})
+	p := xmlutil.NewPrefixer(w, map[string]string{soap.XMLSpaceEnvelope: "soapenv", cwmp.XMLSpace: "cwmp"})
 
 	e := xml.NewEncoder(p)
 

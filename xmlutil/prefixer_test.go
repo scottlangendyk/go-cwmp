@@ -1,4 +1,4 @@
-package soap
+package xmlutil
 
 import (
 	"bytes"

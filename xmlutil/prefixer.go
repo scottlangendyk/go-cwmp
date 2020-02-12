@@ -1,11 +1,11 @@
-package soap
+package xmlutil
 
 import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
-	"sort"
 	"io"
+	"sort"
 )
 
 type Prefixer interface {
@@ -21,12 +21,12 @@ func NewPrefixer(w io.Writer, p map[string]string) Prefixer {
 }
 
 type stackItem struct {
-	Start *xml.StartElement
+	Start    *xml.StartElement
 	Prefixes map[string]string
 }
 
 type prefixer struct {
-	p    map[string]string
+	p     map[string]string
 	stack []*stackItem
 	b     bytes.Buffer
 	e     *xml.Encoder
@@ -38,7 +38,7 @@ func (p *prefixer) Error() error {
 }
 
 func (p *prefixer) prefixForNamespace(ns string) string {
-	for i := len(p.stack)-1; i >=0; i-- {
+	for i := len(p.stack) - 1; i >= 0; i-- {
 		for space, prefix := range p.stack[i].Prefixes {
 			if space == ns {
 				return prefix
@@ -49,7 +49,7 @@ func (p *prefixer) prefixForNamespace(ns string) string {
 	return ""
 }
 
-func (p *prefixer) push(start xml.StartElement) xml.StartElement{
+func (p *prefixer) push(start xml.StartElement) xml.StartElement {
 	item := &stackItem{
 		Start: &xml.StartElement{
 			Name: start.Name,
@@ -126,7 +126,7 @@ func (p *prefixer) push(start xml.StartElement) xml.StartElement{
 		item.Start.Attr = append(item.Start.Attr, attr)
 	}
 
-	return *item.Start 
+	return *item.Start
 }
 
 func (p *prefixer) pop() xml.EndElement {
