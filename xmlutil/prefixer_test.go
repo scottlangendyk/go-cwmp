@@ -20,7 +20,7 @@ func TestPrefixerStartsWithEndElement(t *testing.T) {
 }
 
 func TestPrefixerInvalidXML(t *testing.T) {
-	input := `<StartTag><Tag></EndTag></Tag></Tag></StartTag>`
+	input := `<<StartTag>`
 
 	var b bytes.Buffer
 
