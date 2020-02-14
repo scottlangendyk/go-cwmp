@@ -144,10 +144,7 @@ func (p *prefixer) pop() xml.EndElement {
 func (p *prefixer) Write(w []byte) (int, error) {
 	d := xml.NewDecoder(&p.b)
 
-	n, err := p.b.Write(w)
-	if err != nil {
-		return n, err
-	}
+	n, _ := p.b.Write(w)
 
 	for {
 		t, err := d.RawToken()
