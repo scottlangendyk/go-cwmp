@@ -10,7 +10,6 @@ import (
 
 type Prefixer interface {
 	io.Writer
-	Error() error
 }
 
 func NewPrefixer(w io.Writer, p map[string]string) Prefixer {
@@ -30,11 +29,6 @@ type prefixer struct {
 	stack []*stackItem
 	b     bytes.Buffer
 	e     *xml.Encoder
-	err   error
-}
-
-func (p *prefixer) Error() error {
-	return p.err
 }
 
 func (p *prefixer) prefixForNamespace(ns string) string {
@@ -138,6 +132,10 @@ func (p *prefixer) push(start xml.StartElement) xml.StartElement {
 }
 
 func (p *prefixer) pop() xml.EndElement {
+	if len(p.stack) == 0 {
+		return xml.EndElement{}
+	}
+
 	s := p.stack[len(p.stack)-1]
 	p.stack = p.stack[:len(p.stack)-1]
 	return s.Start.End()
@@ -153,12 +151,12 @@ func (p *prefixer) Write(w []byte) (int, error) {
 
 	for {
 		t, err := d.RawToken()
-		p.err = err
 		if err == io.EOF {
-			p.err = nil
-		}
-		if err != nil {
 			return n, nil
+		}
+
+		if err != nil {
+			return n, err
 		}
 
 		switch el := t.(type) {

@@ -6,6 +6,32 @@ import (
 	"testing"
 )
 
+func TestPrefixerStartsWithEndElement(t *testing.T) {
+	input := `</EndTag>`
+
+	var b bytes.Buffer
+
+	p := NewPrefixer(&b, map[string]string{})
+
+	_, err := fmt.Fprint(p, input)
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+}
+
+func TestPrefixerInvalidXML(t *testing.T) {
+	input := `<StartTag><Tag></EndTag></Tag></Tag></StartTag>`
+
+	var b bytes.Buffer
+
+	p := NewPrefixer(&b, map[string]string{})
+
+	_, err := fmt.Fprint(p, input)
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+}
+
 func TestPrefixerUnknownNamespace(t *testing.T) {
 	input := `<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/"><Header xmlns="http://schemas.xmlsoap.org/soap/envelope/"><tag xmlns="dontchangethis" xmlns:unknown="dontchangethiseither"><unknown:test>Something</unknwon:test></tag><ID xmlns="urn:dslforum-org:cwmp-1-0" xmlns:envelope="http://schemas.xmlsoap.org/soap/envelope/" envelope:mustUnderstand="1">1234</ID><SessionTimeout xmlns="urn:dslforum-org:cwmp-1-0">2</SessionTimeout><SupportedCWMPVersions xmlns="urn:dslforum-org:cwmp-1-0">1.0,1.1,1.4</SupportedCWMPVersions></Header><Body xmlns="http://schemas.xmlsoap.org/soap/envelope/"><InformResponse xmlns="urn:dslforum-org:cwmp-1-0"><MaxEnvelopes>1</MaxEnvelopes></InformResponse></Body></Envelope>`
 
@@ -18,10 +44,6 @@ func TestPrefixerUnknownNamespace(t *testing.T) {
 
 	_, err := fmt.Fprint(p, input)
 	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-
-	if p.Error() != nil {
 		t.Fatalf("err: %v", err)
 	}
 
@@ -48,10 +70,6 @@ func TestPrefixerAttrs(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	if p.Error() != nil {
-		t.Fatalf("err: %v", err)
-	}
-
 	want := `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-0"><soapenv:Header><cwmp:ID soapenv:mustUnderstand="1">1234</cwmp:ID><cwmp:SessionTimeout>2</cwmp:SessionTimeout><cwmp:SupportedCWMPVersions>1.0,1.1,1.4</cwmp:SupportedCWMPVersions></soapenv:Header><soapenv:Body><cwmp:InformResponse><MaxEnvelopes>1</MaxEnvelopes></cwmp:InformResponse></soapenv:Body></soapenv:Envelope>`
 	got := b.String()
 
@@ -73,10 +91,6 @@ func TestPrefixerMultipleNamespaces(t *testing.T) {
 
 	_, err := fmt.Fprint(p, input)
 	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-
-	if p.Error() != nil {
 		t.Fatalf("err: %v", err)
 	}
 
@@ -188,10 +202,6 @@ func TestPrefixerMultiWrite(t *testing.T) {
 	_, err = fmt.Fprint(p, input[len(input)-11:])
 	if err != nil {
 		t.Fatalf("err: %v", err)
-	}
-
-	if p.Error() != nil {
-		t.Fatalf("err: %v", p.Error())
 	}
 
 	want := input
