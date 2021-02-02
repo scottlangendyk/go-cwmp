@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"../soap"
+	"github.com/scottlangendyk/go-cwmp/soap"
 )
 
 const XMLSpace = "urn:dslforum-org:cwmp-1-0"

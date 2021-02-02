@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"../cwmp"
-	"../soap"
-	"../xmlutil"
+	"github.com/scottlangendyk/go-cwmp/cwmp"
+	"github.com/scottlangendyk/go-cwmp/soap"
+	"github.com/scottlangendyk/go-cwmp/xmlutil"
 )
 
 func handleMessage(r *http.Request) (*soap.Envelope, error) {

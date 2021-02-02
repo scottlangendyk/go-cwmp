@@ -1,9 +1,9 @@
 package cwmp
 
 import (
-	"../soap"
 	"bytes"
 	"encoding/xml"
+	"github.com/scottlangendyk/go-cwmp/soap"
 	"os"
 	"reflect"
 	"strings"
@@ -153,13 +153,13 @@ func TestDecodeFault(t *testing.T) {
 			String: "Invalid arguments",
 			SetParameterValuesFault: []SetParameterValuesFault{
 				SetParameterValuesFault{
-					Name: "Device.Time.NTPServer1",
-					Code: 9007,
+					Name:   "Device.Time.NTPServer1",
+					Code:   9007,
 					String: "Invalid IP Address",
 				},
 				SetParameterValuesFault{
-					Name: "Device.Time.LocalTimeZoneName",
-					Code: 9007,
+					Name:   "Device.Time.LocalTimeZoneName",
+					Code:   9007,
 					String: "String too long",
 				},
 			},
@@ -187,7 +187,6 @@ func testDecodeInform(t *testing.T, filename string, want Inform) {
 
 	assertInform(t, want, *got)
 }
-
 
 func TestDecodeInform(t *testing.T) {
 	testDecodeInform(t, "testdata/inform.xml", Inform{
@@ -242,10 +241,10 @@ func TestDecodeHeader(t *testing.T) {
 	}
 
 	want := Header{
-		ID: new(string),
-		SessionTimeout: new(uint),
-		HoldRequests: new(bool),
-		UseCWMPVersion: new(string),
+		ID:                    new(string),
+		SessionTimeout:        new(uint),
+		HoldRequests:          new(bool),
+		UseCWMPVersion:        new(string),
 		SupportedCWMPVersions: new(CWMPVersions),
 	}
 
@@ -253,7 +252,7 @@ func TestDecodeHeader(t *testing.T) {
 	*want.SessionTimeout = 2
 	*want.HoldRequests = true
 	*want.UseCWMPVersion = "1.4"
-	*want.SupportedCWMPVersions = CWMPVersions{"1.0","1.1","1.4"}
+	*want.SupportedCWMPVersions = CWMPVersions{"1.0", "1.1", "1.4"}
 
 	assertHeader(t, want, *h)
 }
@@ -304,12 +303,12 @@ func TestDecodeHeaderPartial(t *testing.T) {
 	}
 
 	want := Header{
-		SessionTimeout: new(uint),
+		SessionTimeout:        new(uint),
 		SupportedCWMPVersions: new(CWMPVersions),
 	}
 
 	*want.SessionTimeout = 2
-	*want.SupportedCWMPVersions = CWMPVersions{"1.0","1.1","1.4"}
+	*want.SupportedCWMPVersions = CWMPVersions{"1.0", "1.1", "1.4"}
 
 	assertHeader(t, want, *h)
 }
@@ -334,10 +333,10 @@ func TestEncodeGetRPCMethodsResponse(t *testing.T) {
 
 func TestEncodeHeader(t *testing.T) {
 	v := &Header{
-		ID: new(string),
-		HoldRequests: new(bool),
-		SessionTimeout: new(uint),
-		UseCWMPVersion: new(string),
+		ID:                    new(string),
+		HoldRequests:          new(bool),
+		SessionTimeout:        new(uint),
+		UseCWMPVersion:        new(string),
 		SupportedCWMPVersions: new(CWMPVersions),
 	}
 
@@ -345,9 +344,9 @@ func TestEncodeHeader(t *testing.T) {
 	*v.HoldRequests = true
 	*v.SessionTimeout = 2
 	*v.UseCWMPVersion = "1.4"
-	*v.SupportedCWMPVersions = CWMPVersions{"1.0","1.1","1.4"}
+	*v.SupportedCWMPVersions = CWMPVersions{"1.0", "1.1", "1.4"}
 
-	want := `<Header xmlns="http://schemas.xmlsoap.org/soap/envelope/"><ID xmlns="urn:dslforum-org:cwmp-1-0" xmlns:envelope="http://schemas.xmlsoap.org/soap/envelope/" envelope:mustUnderstand="1">1234</ID><HoldRequests xmlns="urn:dslforum-org:cwmp-1-0" xmlns:envelope="http://schemas.xmlsoap.org/soap/envelope/" envelope:mustUnderstand="1">1</HoldRequests><SessionTimeout xmlns="urn:dslforum-org:cwmp-1-0">2</SessionTimeout><SupportedCWMPVersions xmlns="urn:dslforum-org:cwmp-1-0">1.0,1.1,1.4</SupportedCWMPVersions><UseCWMPVersion xmlns="urn:dslforum-org:cwmp-1-0" xmlns:envelope="http://schemas.xmlsoap.org/soap/envelope/" envelope:mustUnderstand="1">1.4</UseCWMPVersion></Header>` 
+	want := `<Header xmlns="http://schemas.xmlsoap.org/soap/envelope/"><ID xmlns="urn:dslforum-org:cwmp-1-0" xmlns:envelope="http://schemas.xmlsoap.org/soap/envelope/" envelope:mustUnderstand="1">1234</ID><HoldRequests xmlns="urn:dslforum-org:cwmp-1-0" xmlns:envelope="http://schemas.xmlsoap.org/soap/envelope/" envelope:mustUnderstand="1">1</HoldRequests><SessionTimeout xmlns="urn:dslforum-org:cwmp-1-0">2</SessionTimeout><SupportedCWMPVersions xmlns="urn:dslforum-org:cwmp-1-0">1.0,1.1,1.4</SupportedCWMPVersions><UseCWMPVersion xmlns="urn:dslforum-org:cwmp-1-0" xmlns:envelope="http://schemas.xmlsoap.org/soap/envelope/" envelope:mustUnderstand="1">1.4</UseCWMPVersion></Header>`
 
 	assertEncode(t, v, want)
 }
@@ -360,12 +359,12 @@ func TestEncodeHeaderEmpty(t *testing.T) {
 
 func TestEncodeHeaderPartial(t *testing.T) {
 	v := &Header{
-		SessionTimeout: new(uint),
+		SessionTimeout:        new(uint),
 		SupportedCWMPVersions: new(CWMPVersions),
 	}
 
 	*v.SessionTimeout = 2
-	*v.SupportedCWMPVersions = CWMPVersions{"1.0","1.1","1.4"}
+	*v.SupportedCWMPVersions = CWMPVersions{"1.0", "1.1", "1.4"}
 
 	want := `<Header xmlns="http://schemas.xmlsoap.org/soap/envelope/"><SessionTimeout xmlns="urn:dslforum-org:cwmp-1-0">2</SessionTimeout><SupportedCWMPVersions xmlns="urn:dslforum-org:cwmp-1-0">1.0,1.1,1.4</SupportedCWMPVersions></Header>`
 
